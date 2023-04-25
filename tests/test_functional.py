@@ -205,3 +205,29 @@ class PartialPersonTest(TestCase):
 
         self.assertIs(output_instance, input_instance)
         self.assertEqual(output_instance, expected_output)
+
+
+class PetEmbeddedDefaultSerializer(DataclassSerializer):
+    class PetInformationSerializer(DataclassSerializer):
+        animal = fields.CharField()
+
+    class Meta:
+        dataclass = Pet
+        fields = ['name', 'information']
+
+    name = fields.CharField()
+    information = PetInformationSerializer(source="*")
+
+
+class SourceStartTest(TestCase):
+    DATA = {'name': 'Milo', 'information': {'animal': 'cat'}}
+    INSTANCE = Pet(name='Milo', animal='cat')
+
+    def test_default_serialization(self):
+        serializer = PetEmbeddedDefaultSerializer(instance=self.INSTANCE)
+        self.assertDictEqual(serializer.data, self.DATA)
+
+    def test_default_deserialization(self):
+        serializer = PetEmbeddedDefaultSerializer(data=self.DATA)
+        serializer.is_valid(raise_exception=True)
+        self.assertEqual(serializer.instance, self.INSTANCE)
